@@ -1,15 +1,17 @@
 from argparse import ArgumentParser
 from datetime import datetime
-from os.path import join
+from os.path import join, isfile
 
 import netCDF4
 import numpy as np
-
 from pyclamps.clamps_plotting import rhi_plot
+
+terrain_nc = '/Users/tbupper90/Data/clamps/newa_perdigao_map_topo.nc'
 
 parser = ArgumentParser()
 parser.add_argument('-i', dest='in_files', nargs='*')
 parser.add_argument('-o', dest='out_dir')
+parser.add_argument('-t', dest='terrain', default=None)
 args = parser.parse_args()
 for f in args.in_files:
     nc = netCDF4.Dataset(f)
@@ -50,6 +52,8 @@ for f in args.in_files:
         # Figure out the image name
         image_name = 'RHI_{}_{}.png'.format(az, time.strftime("%Y%m%d_%H%M"))
         image_name = join(args.out_dir, image_name)
-        rhi_plot(elev, rng_m, vel, az, time, path=image_name, xlim=(-2500, 2500), ylim=(0, 2500))
+        if not isfile(image_name):
+            rhi_plot(elev, rng_m, vel, az, time, path=image_name, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
+                     terrain_file=args.terrain)
 
     nc.close()

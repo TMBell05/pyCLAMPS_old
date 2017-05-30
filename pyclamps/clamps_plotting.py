@@ -8,18 +8,21 @@ import matplotlib.pyplot as plt
 # 3rd party Libraries
 import cmocean
 import numpy as np
+import scipy.interpolate as interpolate
 from colormaps import create_colormap
+from mpl_toolkits.axes_grid.inset_locator import inset_axes
 
 # From this library
-from .utils import jet_max
+from .utils import jet_max, get_terrain_cross_section
+from pyclamps.__init__ import perdigao_clamps_lat, perdigao_clamps_lon
 
 # Make some colormaps for later
 cm_ws = create_colormap(1000, base='ncl_helix', name='helix', reverse=False, white=False)
 cm_bias = create_colormap(1000, base='ncl_temp_diff_18lev', name='tempdiff', reverse=False, white=False)
 
 
-def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
-             xlim=(-7500, 7500), ylim=(0, 7500),path=None):
+def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5, path=None,
+             xlim=(-7500, 7500), ylim=(0, 7500), terrain_file=None):
     # ind = np.where(scans == 90)
     #
     # # Get the grid figured out
@@ -38,20 +41,50 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
 
     vel = vel[sort, :].transpose()
 
+    # Get the axis for the plot
+    fig, ax = plt.subplots(figsize=(10, 5))
+
+    # See if we need to do things with the terrain
+    if terrain_file is not None:
+        cross_ranges = np.arange(-2000, 2000, 100)
+        terr_elev, cross_pts, elev_grid = get_terrain_cross_section(terrain_file, perdigao_clamps_lat,
+                                                                    perdigao_clamps_lon, az, cross_ranges)
+        cross_section = interpolate.interp1d(cross_ranges, terr_elev)
+        z_0 = cross_section(0.)
+        y_m += z_0
+        ax.plot(cross_ranges, terr_elev)
+
     # Make the plot
-    plt.figure(figsize=(10, 5))
-    plt.pcolor(x_m, y_m, vel, vmin=vmin, vmax=vmax)
-    plt.colorbar()
-    plt.xlim(xlim)
-    plt.ylim(ylim)
+    c = ax.pcolor(x_m, y_m, vel, vmin=vmin, vmax=vmax, cmap=cmocean.cm.delta)
+    ax.set_xlim(xlim)
+    ax.set_ylim(ylim)
+    plt.colorbar(c)
     plt.title('RHI {} {}'.format(az, time.isoformat()))
+
+    # Create the inset if the terrain file was used
+    if terrain_file is not None:
+        x1, y1, x2, y2 = [cross_pts[0][0], cross_pts[1][0], cross_pts[0][-1], cross_pts[1][-1]]
+        inset = inset_axes(ax, width=1., height=1., loc=2)
+        inset.pcolormesh(elev_grid[0], elev_grid[1], elev_grid[2], vmin=200, vmax=500)
+        inset.set_xlim(-2000, 2000)
+        inset.set_ylim(-2000, 2000)
+        inset.arrow(x1, y1, x2 - x1, y2 - y1, color='r')
+        #         inset.plot(cross_pts[0], cross_pts[1], color='r')
+        inset.get_xaxis().set_visible(False)
+        inset.get_yaxis().set_visible(False)
 
     if path is not None:
         plt.savefig(path)
     else:
+        pass
         plt.show()
 
     plt.close()
+
+
+# plt.show()
+
+#     plt.close()
 
 
 def time_height(t, z, field, fieldtype, path, jet_overlay=0, jet_range=.75, wsfield=0, fieldmin=0, fieldmax=25, zmin=0,

@@ -2,9 +2,12 @@
 Collection of utility functions for processing CLAMPS data
 """
 import numpy as np
+import pyproj
 import xarray
 import smtplib
 import os
+
+from netCDF4 import Dataset
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -14,9 +17,12 @@ from email.utils import COMMASPACE, formatdate
 from email import Encoders
 import ConfigParser
 
+
 # Constants
 Re = 6371000
 R43 = Re * 4.0 / 3.0
+
+PREV_CROSS_SECTIONS = {}
 
 
 def concat_files(files, concat_dim='time'):
@@ -29,6 +35,47 @@ def concat_files(files, concat_dim='time'):
     arr.close()
 
     return data
+
+
+def get_terrain_cross_section(terrain_nc, lat_0, lon_0, az, rng):
+    # If we already have the data for this cross section...
+    if az in PREV_CROSS_SECTIONS.keys():
+        return PREV_CROSS_SECTIONS[az]
+
+    # Otherwise do the process....
+    # Open the netcdf
+    nc = Dataset(terrain_nc)
+
+    # Get the projection
+    proj = pyproj.Proj(nc['x'].proj4)
+
+    # Convert the lats/lons to UTM coords
+    x, y = proj(nc['lon'][:], nc['lat'][:])
+
+    # Get the location of interest
+    x_0, y_0 = proj(lon_0, lat_0)
+
+    # Convert the coordinates relative to x_0, y_0
+    x_rel = x - x_0
+    y_rel = y - y_0
+
+    # Calculate points of the cross section
+    x_cross = rng * np.sin(np.deg2rad(az))
+    y_cross = rng * np.cos(np.deg2rad(az))
+    z_cross = []
+
+    for i in range(rng.size):
+        ind = np.argmin(np.abs(np.sqrt((x_rel - x_cross[i]) ** 2. + (y_rel - y_cross[i]) ** 2.)))
+        z_cross.append(nc['z'][:].flatten()[ind])
+
+    z_cross = np.asarray(z_cross)
+    z = nc['z'][:]
+    nc.close()
+
+    # Add the data to the previous datasets
+    PREV_CROSS_SECTIONS[az] = (z_cross, (x_cross, y_cross), (x_rel, y_rel, z))
+
+    return z_cross, (x_cross, y_cross), (x_rel, y_rel, z)
 
 
 def jet_max(t, z, ws, buf=12):
