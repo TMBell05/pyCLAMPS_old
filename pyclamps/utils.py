@@ -25,18 +25,6 @@ R43 = Re * 4.0 / 3.0
 PREV_CROSS_SECTIONS = {}
 
 
-def concat_files(files, concat_dim='time'):
-    arr = xarray.open_mfdataset(files, autoclose=True, concat_dim=concat_dim, decode_times=False)
-    data = {}
-
-    for key in arr.keys():
-        data[key] = arr[key].values
-
-    arr.close()
-
-    return data
-
-
 def get_terrain_cross_section(terrain_nc, lat_0, lon_0, az, rng):
     # If we already have the data for this cross section...
     if az in PREV_CROSS_SECTIONS.keys():

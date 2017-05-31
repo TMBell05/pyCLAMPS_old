@@ -7,7 +7,7 @@ import matplotlib.dates as mdates
 import cmocean
 
 from datetime import datetime, timedelta
-from pyclamps.utils import concat_files
+from pyclamps.io import concat_files
 
 start_date = datetime(2017, 5, 6)
 end_date = datetime(2017, 5, 7)
@@ -17,6 +17,7 @@ td = timedelta(days=1)
 while date <= end_date:
     vad_data = concat_files(date.strftime('/data/tbell/clamps1/dl/vads/*%Y%m%d*'))
     print vad_data
+
     hours = mdates.HourLocator()
     fmt = mdates.DateFormatter('%H%M')
     xlim = mdates.date2num(np.asarray([date, date+td]))
