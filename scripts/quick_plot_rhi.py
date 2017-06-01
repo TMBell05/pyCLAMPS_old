@@ -47,13 +47,20 @@ for f in args.in_files:
         # Get the data
         vel = nc['velocity'][ind]
         intensity = nc['intensity'][ind]
-        # vel = np.ma.masked_where(vel, intensity < 1.015)
+        vel = np.ma.masked_where(intensity < 1.01, vel)
 
         # Figure out the image name
-        image_name = 'RHI_{}_{}.png'.format(az, time.strftime("%Y%m%d_%H%M"))
+        image_name = 'RHI_horiz_{}_{}.png'.format(az, time.strftime("%Y%m%d_%H%M"))
+        # image_name = 'RHI_{}_{}.png'.format(az, time.strftime("%Y%m%d_%H%M"))
         image_name = join(args.out_dir, image_name)
+
+        # Testing horiz component view
+        tmp_elev = np.meshgrid(elev, rng_m)[0].transpose()
+        h_vel = vel * np.cos(tmp_elev)
+        del tmp_elev
+
         if not isfile(image_name):
-            rhi_plot(elev, rng_m, vel, az, time, path=image_name, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
+            rhi_plot(elev, rng_m, h_vel, az, time, path=image_name, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
                      terrain_file=args.terrain)
 
     nc.close()
