@@ -1,10 +1,13 @@
+import matplotlib; matplotlib.use('agg')
+
 from argparse import ArgumentParser
 from datetime import datetime
 from os.path import join, isfile
 
+import matplotlib.pyplot as plt
 import netCDF4
 import numpy as np
-from pyclamps.clamps_plotting import rhi_plot
+from pyclamps.plotting import rhi_plot
 
 terrain_nc = '/Users/tbupper90/Data/clamps/newa_perdigao_map_topo.nc'
 
@@ -60,7 +63,10 @@ for f in args.in_files:
         del tmp_elev
 
         if not isfile(image_name):
-            rhi_plot(elev, rng_m, h_vel, az, time, path=image_name, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
+            print(image_name)
+            rhi_plot(elev, rng_m, h_vel, az, time, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
                      terrain_file=args.terrain)
+            plt.savefig(image_name)
+            plt.close()
 
     nc.close()

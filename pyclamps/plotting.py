@@ -21,7 +21,7 @@ cm_ws = create_colormap(1000, base='ncl_helix', name='helix', reverse=False, whi
 cm_bias = create_colormap(1000, base='ncl_temp_diff_18lev', name='tempdiff', reverse=False, white=False)
 
 
-def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5, path=None,
+def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
              xlim=(-7500, 7500), ylim=(0, 7500), terrain_file=None):
     # ind = np.where(scans == 90)
     #
@@ -73,13 +73,7 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5, path=None,
         inset.get_xaxis().set_visible(False)
         inset.get_yaxis().set_visible(False)
 
-    if path is not None:
-        plt.savefig(path)
-    else:
-        pass
-        plt.show()
-
-    plt.close()
+    return ax
 
 
 # plt.show()
