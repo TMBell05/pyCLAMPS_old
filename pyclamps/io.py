@@ -18,6 +18,7 @@ def concat_files(files, concat_dim='time'):
 
     for key in arr.keys():
         data[key] = arr[key].values
+        data[key] = np.ma.masked_where(np.isnan(data[key]), data[key])
 
     arr.close()
 

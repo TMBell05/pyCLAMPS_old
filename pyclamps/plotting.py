@@ -19,6 +19,7 @@ from pyclamps.__init__ import perdigao_clamps_lat, perdigao_clamps_lon
 # Make some colormaps for later
 cm_ws = create_colormap(1000, base='ncl_helix', name='helix', reverse=False, white=False)
 cm_bias = create_colormap(1000, base='ncl_temp_diff_18lev', name='tempdiff', reverse=False, white=False)
+z_0 = 0
 
 
 def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
@@ -28,18 +29,22 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
     # # Get the grid figured out
     # elev = np.deg2rad(nc['elevation'][ind])
     # rng_m = nc['height'][:] * 1e3
-
     elev, rng_m = np.meshgrid(elev, rng_m)
 
-    # Sort the elevations so it plots right....
-    sort = np.argsort(elev, axis=1)[0, :]
-    elev = elev[:, sort]
-    rng_m = rng_m[:, sort]
+    #     # Sort the elevations so it plots right....
+    #     sort = np.argsort(elev, axis=1)[0, :]
+    #     elev = elev[:, sort]
+    #     rng_m = rng_m[:, sort]
 
-    x_m = rng_m * np.cos(elev)
+    if az >= 180:
+        x_m = rng_m * -np.cos(elev)
+        vel *= -1.
+    else:
+        x_m = rng_m * np.cos(elev)
     y_m = rng_m * np.sin(elev)
 
-    vel = vel[sort, :].transpose()
+    #     vel = vel[sort, :].transpose()
+    vel = vel.transpose()
 
     # Get the axis for the plot
     fig, ax = plt.subplots(figsize=(10, 5))
@@ -73,12 +78,7 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
         inset.get_xaxis().set_visible(False)
         inset.get_yaxis().set_visible(False)
 
-    return ax
-
-
-# plt.show()
-
-#     plt.close()
+    return ax, z_0
 
 
 def time_height(t, z, field, fieldtype, path, jet_overlay=0, jet_range=.75, wsfield=0, fieldmin=0, fieldmax=25, zmin=0,

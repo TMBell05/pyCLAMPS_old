@@ -42,7 +42,7 @@ var_lookup = {'leo':
                   {
                       'vel': 'velocity',
                       'thresh_var': 'intensity',
-                      'thresh_value': 1.015,
+                      'thresh_value': 1.01,
                       'az': 'azimuth',
                       'elev': 'elevation',
                       'range': 'range',
@@ -94,6 +94,14 @@ def process_file(in_file, system, height=None, sinfit_dir=None):
             az = nc[var_lookup[system]['az']][scan_ind]
             elev = nc[var_lookup[system]['elev']][scan_ind]
 
+            nc_name = "{prefix}_{date}_{elev}.nc"
+            nc_name = nc_name.format(prefix=args.out_prefix, date=date.strftime("%Y%m%d_%H%M%S"),
+                                     elev=int(np.mean(elev)))
+            nc_name = os.path.join(args.out_dir, nc_name)
+
+            if os.path.isfile(nc_name):
+                continue
+
             # Filter out the bad values based on CNR
             az = np.where(cnr <= var_lookup[system]['thresh_value'], FILL_VALUE, az)
             vel = np.where(cnr <= var_lookup[system]['thresh_value'], FILL_VALUE, vel)
@@ -128,12 +136,7 @@ def process_file(in_file, system, height=None, sinfit_dir=None):
             rmse.append(tmp_RMSE)
             r_sq.append(tmp_r_sq)
 
-        nc_name = "{prefix}_{date}_{elev}.nc"
-        nc_name = nc_name.format(prefix=args.out_prefix, date=date.strftime("%Y%m%d_%H%M%S"), elev=int(np.mean(elev)))
-        nc_name = os.path.join(args.out_dir, nc_name)
-
         write_to_nc(nc_name, date, elev, u, v, w, hgt, rmse, r_sq)
-
 
     # Close the netcdf
     nc.close()
@@ -194,12 +197,12 @@ if __name__=='__main__':
 
     for i, f in enumerate(sorted(args.in_files)):
         print(f)
-        u, v, w, hgt, rmse, r_sq, date, elev = process_file(f, system=args.system)#, height=height, sinfit_dir=args.out_dir)
-        nc_name = "{prefix}_{date}_{elev}.nc"
-        nc_name = nc_name.format(prefix=args.out_prefix, date=date.strftime("%Y%m%d_%H%M%S"), elev=int(np.mean(elev)))
-        nc_name = os.path.join(args.out_dir, nc_name)
-
-        write_to_nc(nc_name, date, elev, u, v, w, hgt, rmse, r_sq)
+        process_file(f, system=args.system)#, height=height, sinfit_dir=args.out_dir)
+        # nc_name = "{prefix}_{date}_{elev}.nc"
+        # nc_name = nc_name.format(prefix=args.out_prefix, date=date.strftime("%Y%m%d_%H%M%S"), elev=int(np.mean(elev)))
+        # nc_name = os.path.join(args.out_dir, nc_name)
+        #
+        # write_to_nc(nc_name, date, elev, u, v, w, hgt, rmse, r_sq)
 
 
         #

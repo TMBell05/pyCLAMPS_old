@@ -1,21 +1,41 @@
 import matplotlib; matplotlib.use('agg')
 
+# Python standard libs
+import logging
+import os
 from argparse import ArgumentParser
 from datetime import datetime
 from os.path import join, isfile
 
+# Downloaded libs
 import matplotlib.pyplot as plt
 import netCDF4
 import numpy as np
-from pyclamps.plotting import rhi_plot
 
-terrain_nc = '/Users/tbupper90/Data/clamps/newa_perdigao_map_topo.nc'
+# Custom libs
+from pyclamps.plotting import rhi_plot
+from pyclamps.io import concat_files
+from pyclamps.utils import rotate
+
 
 parser = ArgumentParser()
 parser.add_argument('-i', dest='in_files', nargs='*')
 parser.add_argument('-o', dest='out_dir')
 parser.add_argument('-t', dest='terrain', default=None)
+parser.add_argument('-v', dest='vad_dir', default=None)
 args = parser.parse_args()
+
+if args.vad_dir is not None:
+    # Get the vads
+    vads = concat_files(os.path.join(args.vad_dir, '*'), concat_dim='time')
+
+    # Get the times now to save time later
+    vad_times = []
+    for t in vads['time']: vad_times.append(datetime.utcfromtimestamp(t))
+    vad_times = np.array(vad_times)
+else:
+    vads = None
+
 for f in args.in_files:
     nc = netCDF4.Dataset(f)
 
@@ -60,14 +80,32 @@ for f in args.in_files:
         # Testing horiz component view
         tmp_elev = np.meshgrid(elev, rng_m)[0].transpose()
         h_vel = vel * np.cos(tmp_elev)
-        if az > 180.: h_vel = -h_vel
+        # if az > 180.: h_vel = -h_vel
+
         del tmp_elev
 
-        if not isfile(image_name):
-            print(image_name)
-            rhi_plot(elev, rng_m, h_vel, az, time, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
-                     terrain_file=args.terrain)
-            plt.savefig(image_name)
-            plt.close()
+        # If the image has already been created, don't need to do anything
+        if isfile(image_name):
+            continue
+
+        # Make the RHI plot
+        ax, z_0 = rhi_plot(elev, rng_m, h_vel, az, time, vmax=10, vmin=-10, xlim=(-2300, 2300), ylim=(0, 1800),
+                           terrain_file=args.terrain)
+
+        if vads is not None:
+            # Get the closest time
+            ind = (np.abs(vad_times-time)).argmin()
+            # Rotate the coordinate system so +x is in the direction of the beam
+            result = rotate(vads['u'][ind], vads['v'][ind], vads['w'][ind], np.deg2rad(az), 0, 0)
+            u, w = result[:, :, 0], result[:, :, 2]
+
+            q = ax.quiver(0, vads['hgt'][ind] + z_0, u, 0, scale_units='inches', scale=10)
+            ax.plot([0, rng_m.max() * np.cos(np.deg2rad(70))], [z_0, rng_m.max() * np.sin(np.deg2rad(70))], color='k')
+            ax.plot([0, rng_m.max() * np.cos(np.deg2rad(110))], [z_0, rng_m.max() * np.sin(np.deg2rad(110))], color='k')
+            plt.quiverkey(q, .9, .8, 5, '5 $ms^{-1}$')
+
+
+        plt.savefig(image_name)
+        plt.close()
 
     nc.close()

@@ -8,6 +8,7 @@ import smtplib
 import os
 
 from netCDF4 import Dataset
+from numpy import sin, cos
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -23,6 +24,13 @@ Re = 6371000
 R43 = Re * 4.0 / 3.0
 
 PREV_CROSS_SECTIONS = {}
+
+
+def geo2sph(x, y, z):
+    r = np.sqrt(x**2 + y**2 + z**2)               # r
+    elev = np.arctan2(z, np.sqrt(x**2 + y**2))     # theta
+    az = np.arctan2(-x, -y)                           # phi
+    return r, elev, az
 
 
 def get_terrain_cross_section(terrain_nc, lat_0, lon_0, az, rng):
@@ -137,6 +145,20 @@ def ray_height(rng, elev, H0=0, R1=R43):
     hgt = hgt - R1 + H0
 
     return hgt
+
+
+def rotate(u, v, w, yaw, pitch, roll):
+
+    rot_matrix = np.asarray(
+        [[cos(yaw)*cos(pitch), cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll), cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll)],
+        [sin(yaw)*cos(pitch) , sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll), sin(yaw)*sin(pitch)*cos(roll)-cos(yaw)*sin(roll)],
+        [-sin(pitch)         , cos(pitch)*sin(roll)                            , cos(pitch)*cos(roll)]])
+
+    vel_matrix = np.asarray([[u], [v], [w]]).transpose()
+
+    result = np.dot(vel_matrix, rot_matrix)
+
+    return result
 
 
 def send_mail(send_from, send_to, subject, text, files=None,

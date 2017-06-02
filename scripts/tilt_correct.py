@@ -4,7 +4,7 @@ import os
 import netCDF4
 import numpy as np
 
-from utils import concat_files
+from pyclamps.io import concat_files
 from datetime import datetime
 from numpy import sin, cos
 
