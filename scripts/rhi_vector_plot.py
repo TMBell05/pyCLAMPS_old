@@ -22,17 +22,18 @@ parser = ArgumentParser()
 parser.add_argument('-i', dest='in_files', nargs='*')
 parser.add_argument('-o', dest='out_dir')
 parser.add_argument('-t', dest='terrain', default=None)
-parser.add_argument('-v', dest='vad_dir', default=None)
+parser.add_argument('-v', dest='vads', nargs='*', default=None)
 args = parser.parse_args()
 
-if args.vad_dir is not None:
+if args.vads is not None:
     # Get the vads
-    vads = concat_files(os.path.join(args.vad_dir, '*'), concat_dim='time')
+    vads = concat_files(args.vads, concat_dim='time')
 
     # Get the times now to save time later
     vad_times = []
     for t in vads['time']: vad_times.append(datetime.utcfromtimestamp(t))
     vad_times = np.array(vad_times)
+
 else:
     vads = None
 
@@ -96,14 +97,19 @@ for f in args.in_files:
             # Get the closest time
             ind = (np.abs(vad_times-time)).argmin()
             # Rotate the coordinate system so +x is in the direction of the beam
-            result = rotate(vads['u'][ind], vads['v'][ind], vads['w'][ind], np.deg2rad(az), 0, 0)
+
+            if az > 180.:
+                result = rotate(vads['u'][ind], vads['v'][ind], vads['w'][ind], np.deg2rad(-270. - (az - 360.)), 0, 0)
+            else:
+                result = rotate(vads['u'][ind], vads['v'][ind], vads['w'][ind], np.deg2rad(-270. - az), 0, 0)
             u, w = result[:, :, 0], result[:, :, 2]
 
+            # Plot the vector
             q = ax.quiver(0, vads['hgt'][ind] + z_0, u, 0, scale_units='inches', scale=10)
-            ax.plot([0, rng_m.max() * np.cos(np.deg2rad(70))], [z_0, rng_m.max() * np.sin(np.deg2rad(70))], color='k')
-            ax.plot([0, rng_m.max() * np.cos(np.deg2rad(110))], [z_0, rng_m.max() * np.sin(np.deg2rad(110))], color='k')
             plt.quiverkey(q, .9, .8, 5, '5 $ms^{-1}$')
 
+            # plot barbs on the RHS
+            ax.barbs(np.repeat(2000, vads['hgt'][ind].size), vads['hgt'][ind] + z_0, vads['u'][ind], vads['v'][ind])
 
         plt.savefig(image_name)
         plt.close()

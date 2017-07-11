@@ -1,8 +1,10 @@
 # Standard Libraries
 import csv
+from datetime import datetime, timedelta
 
 # 3rd Party Libs
 import numpy as np
+import netCDF4
 import xarray
 
 
@@ -21,6 +23,63 @@ def concat_files(files, concat_dim='time'):
         data[key] = np.ma.masked_where(np.isnan(data[key]), data[key])
 
     arr.close()
+
+    return data
+
+
+def get_aeri_variables(fn, variables):
+    """
+    Extract specific variables and mask areas of questionable quality. time and height will
+    be extracted automatically
+    :param fn: Filename
+    :param variables: List of variables to extract
+    :return: Dict of data
+    """
+    # Open the dataset
+    nc = netCDF4.Dataset(fn)
+
+    # Make the dictionary to store the variables. Start with time and height
+    data = {'time': np.asarray([datetime.utcfromtimestamp(d) for d in (nc['base_time'][:]+nc['time_offset'][:])]),
+            'height': nc['height'][:]}
+
+    # Make qc flag into the same shape as the data
+    qc_flag = np.meshgrid(nc['qc_flag'], data['height'])[0].transpose()
+
+    # Need to find gaps larger than 10 minutes so they can be blanked out correctly
+    times = np.asarray([datetime.utcfromtimestamp(d) for d in (nc['base_time'][:]+nc['time_offset'][:])])
+    new_times = []
+    gaps_counter = 0
+    for i in range(times.size)[1:]:
+        # If there's larger than a 10 minute gap in the data, add it in so we can mask it out later
+        if times[i] - times[i-1] > timedelta(seconds=10*60):
+            num_missing = (times[i] - times[i-1]).total_seconds() / (10*60)
+            for num in range(1, int(num_missing)):
+                new_times.append(times[i]+timedelta(seconds=num*10*60))
+                gaps_counter += 1
+    times = np.append(times, new_times)
+
+    # create bad data array to append to the good data.
+    bad = np.zeros(shape=(gaps_counter, data['height'].size))
+    bad[:] = np.nan
+
+    # Get the sorting order based on time and add the sorted times to the data dictionary
+    sort_order = np.argsort(times)
+    data['time'] = times[sort_order]
+
+    for var in variables:
+        # Make sure the variable is there
+        if var not in nc.variables.keys():
+            raise KeyError("{} not in aeri variables list".format(var))
+
+        tmp = nc[var][:]
+        # Mask values with bad qc
+        tmp = np.ma.MaskedArray(np.append(tmp, bad, axis=0))
+        tmp = tmp[sort_order]
+        # mask the gaps
+        tmp.mask = np.isnan(tmp)
+        data[var] = tmp
+
+    nc.close()
 
     return data
 
