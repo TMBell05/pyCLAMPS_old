@@ -38,7 +38,8 @@ cmaps = {
 
 
 def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
-             xlim=(-7500, 7500), ylim=(0, 7500), terrain_file=None):
+             xlim=(-7500, 7500), ylim=(0, 7500), terrain_file=None,
+             lat_0=perdigao_clamps_lat, lon_0=perdigao_clamps_lon):
     # ind = np.where(scans == 90)
     #
     # # Get the grid figured out
@@ -63,8 +64,8 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
     # See if we need to do things with the terrain
     if terrain_file is not None:
         cross_ranges = np.arange(-2000, 2000, 100)
-        terr_elev, cross_pts, elev_grid = get_terrain_cross_section(terrain_file, perdigao_clamps_lat,
-                                                                    perdigao_clamps_lon, az, cross_ranges)
+        terr_elev, cross_pts, elev_grid = get_terrain_cross_section(terrain_file, lat_0,
+                                                                    lon_0, az, cross_ranges)
         cross_section = interpolate.interp1d(cross_ranges, terr_elev)
         z_0 = cross_section(0.)
         y_m += z_0
