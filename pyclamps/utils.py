@@ -6,9 +6,11 @@ import pyproj
 import xarray
 import smtplib
 import os
+from datetime import datetime
 
 from netCDF4 import Dataset
 from numpy import sin, cos
+from pint import UnitRegistry
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -17,6 +19,8 @@ from email.mime.image import MIMEImage
 from email.utils import COMMASPACE, formatdate
 from email import Encoders
 import ConfigParser
+
+from pyclamps.tower import Tower
 
 
 # Constants
@@ -72,6 +76,47 @@ def get_terrain_cross_section(terrain_nc, lat_0, lon_0, az, rng):
     PREV_CROSS_SECTIONS[az] = (z_cross, (x_cross, y_cross), (x_rel, y_rel, z))
 
     return z_cross, (x_cross, y_cross), (x_rel, y_rel, z)
+
+
+def get_tower_from_ucar_nc(nc_file, t_id):
+    """
+    Extracts tower data from the netcdf based on tower ID.
+    :param nc_file: Filename of the tower netcdf
+    :param t_id: ID of the tower (ex 'tnw01')
+    :return: Tower object containing the data
+    """
+
+    # Open the netcdf
+    nc = Dataset(nc_file)
+
+    # Create a unit registry to make sure everything is in base units and to correctly read in data.
+    ureg = UnitRegistry()
+
+    # Init a dict to hold the tower information
+    tower = Tower(t_id, nc['latitude_'+t_id][0], nc['longitude_'+t_id][0])
+
+    # Don't forget the tower time
+    times = [datetime.fromtimestamp(d) for d in nc['base_time'][:] + nc['time'][:]]
+    tower.time = np.asarray(times)
+
+    # Loop through all the keys to find the ones with the correct tower id
+    for key in nc.variables.keys():
+        if t_id in key:
+            try:
+
+                # Split the key to get all the info needed
+                info = key.split('_')
+
+                # Only grab info from keys formatted like var_height_tower
+                # TODO - Account for radiation and flux data
+                if len(info) == 3:
+                    tower.add_measurement(info[0], ureg(info[1]).to_base_units().magnitude, nc[key][:])
+
+            except AttributeError:
+                pass
+
+    nc.close()
+    return tower
 
 
 def jet_max(t, z, ws, buf=12):
