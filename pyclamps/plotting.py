@@ -55,6 +55,8 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
     x_m = rng_m * np.cos(elev)
     y_m = rng_m * np.sin(elev)
 
+    if az >= 180.: x_m *= -1.
+
     #     vel = vel[sort, :].transpose()
     vel = vel.transpose()
 
