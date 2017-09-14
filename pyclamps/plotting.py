@@ -64,6 +64,7 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
     fig, ax = plt.subplots(figsize=(10, 5))
 
     # See if we need to do things with the terrain
+    z_0 = None
     if terrain_file is not None:
         cross_ranges = np.arange(-2000, 2000, 100)
         terr_elev, cross_pts, elev_grid = get_terrain_cross_section(terrain_file, lat_0,
