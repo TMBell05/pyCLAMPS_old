@@ -40,17 +40,28 @@ cmaps = {
 def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
              xlim=(-7500, 7500), ylim=(0, 7500), terrain_file=None,
              lat_0=perdigao_clamps_lat, lon_0=perdigao_clamps_lon):
-    # ind = np.where(scans == 90)
-    #
-    # # Get the grid figured out
-    # elev = np.deg2rad(nc['elevation'][ind])
-    # rng_m = nc['height'][:] * 1e3
-    elev, rng_m = np.meshgrid(elev, rng_m)
+    '''
+    Function that plots clamps rhi data.
+    :param elev: 1-D elevation data
+    :param rng_m: 1-D range range data
+    :param vel: 2-d velocity data (dims: elevation, range)
+    :param az: Azimuth of data
+    :param time: datetime object of rhi time
+    :param vmin: Minimum velocity
+    :param vmax: Maximum velocity
+    :param xlim: X limit of plot
+    :param ylim: Y limit of plot
+    :param terrain_file: Netcdf file containing elevation data
+    :param lat_0: Latitiude of CLAMPS
+    :param lon_0: Longitude of CLAMPS
+    :return:
+        ax: matplotlib axis object containing the plot
+        z_0: Elevation of CLAMPS extracted from the terrain file (if not None)
+    '''
 
-    #     # Sort the elevations so it plots right....
-    #     sort = np.argsort(elev, axis=1)[0, :]
-    #     elev = elev[:, sort]
-    #     rng_m = rng_m[:, sort]
+    # TODO - Take out all the terrain plotting stuff and make that happen in the script
+
+    elev, rng_m = np.meshgrid(elev, rng_m)
 
     x_m = rng_m * np.cos(elev)
     y_m = rng_m * np.sin(elev)
@@ -98,6 +109,30 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
 
 def time_height(time, height, data, field, ax=None, datemin=None, datemax=None,
                 datamin=None, datamax=None, zmin=None, zmax=None):
+    '''
+    Produces a time height plot of a 2-D field
+    :param time: Array of times (1-D or 2-D but must have same dimenstions as height)
+    :param height: Array of heights (1-D or 2-D but must have same dimensions as time)
+    :param data: Array of the data to plot (2-D)
+    :param field: Field being plotted. Currently supported:
+        'w': Vertical Velocity
+        'ws': Wind Speed
+        'wd': Wind Direction
+        'pt': Potential Temperature
+        'q':  Specific Humidity
+        'dp': Dewpoint
+        'rh': Relative Humidity
+        'std': Standard Deviation
+
+    :param ax: Axis to plot the data to
+    :param datemin: Datetime object
+    :param datemax: Datetime object
+    :param datamin: Minimum value of data to plot
+    :param datamax: Maximum value of data to plot
+    :param zmin: Minimum height to plot
+    :param zmax: Maximum height to plot
+    :return:
+    '''
 
     # Get the colormat and label of the data
     cm, cb_label = cmaps[field]['cm'], cmaps[field]['label']
@@ -136,6 +171,22 @@ def time_height(time, height, data, field, ax=None, datemin=None, datemax=None,
 
 def vad_component_plot(u, v, w, hgt, rmse, r_sq, date, prefix, out_dir,
                        vel_lim=(-30, 30), hgt_lim=(0, 1000)):
+    '''
+    Plots U, V, W, rmse, and R^2 profiles with height
+    :param u:
+    :param v:
+    :param w:
+    :param hgt:
+    :param rmse:
+    :param r_sq:
+    :param date:
+    :param prefix:
+    :param out_dir:
+    :param vel_lim:
+    :param hgt_lim:
+    :return:
+    '''
+    # TODO - Make this use an axis object instead of creating it's own
     fig = plt.figure(1, figsize=(25, 7))
     fig.suptitle(date.isoformat())
     plt.subplot(1, 5, 1)

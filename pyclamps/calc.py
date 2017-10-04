@@ -7,6 +7,14 @@ def vapor_pressure(pressure, mixing_ratio):
     return pressure * mixing_ratio / (epsilon + mixing_ratio)
 
 
+def mixing_ratio(e, p):
+    return .622 * e / (p - e)
+
+
+def sat_mixing_ratio(p, t):
+    return mixing_ratio(sat_vapor_pressure(t), p)
+
+
 def dewpoint(e):
     """
     returns Td in C

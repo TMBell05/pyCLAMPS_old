@@ -56,11 +56,14 @@ def calc_vad(az, elev, vel):
 
 def calc_vad_3d(az, elev, vel):
     """
-    IN DEVELOPMENT DO NOT USE
-    :param az:
-    :param elev:
-    :param vel:
+    Calculates the 3D VAD
+    :param az: Azimuth data
+    :param elev: Elevation Data
+    :param vel: Velocity Data
     :return:
+        u: U component of the wind
+        v: V component of the wind
+        w: W component of the wind
     """
     elev = np.deg2rad(elev)
     az = np.deg2rad(az)

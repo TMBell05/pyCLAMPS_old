@@ -31,6 +31,16 @@ PREV_CROSS_SECTIONS = {}
 
 
 def geo2sph(x, y, z):
+    '''
+    Convert cartesian (geographic) coridinates to spherical coordinates
+    :param x: X Coordinate
+    :param y: Y Coordinate
+    :param z: Z Coordinate
+    :return:
+        r: Range
+        elev: Elevation
+        az: Azimuth
+    '''
     r = np.sqrt(x**2 + y**2 + z**2)               # r
     elev = np.arctan2(z, np.sqrt(x**2 + y**2))     # theta
     az = np.arctan2(-x, -y)                           # phi
@@ -38,6 +48,15 @@ def geo2sph(x, y, z):
 
 
 def get_terrain_cross_section(terrain_nc, lat_0, lon_0, az, rng):
+    '''
+
+    :param terrain_nc:
+    :param lat_0:
+    :param lon_0:
+    :param az:
+    :param rng:
+    :return:
+    '''
     # If we already have the data for this cross section...
     if az in PREV_CROSS_SECTIONS.keys():
         return PREV_CROSS_SECTIONS[az]
@@ -193,6 +212,17 @@ def ray_height(rng, elev, H0=0, R1=R43):
 
 
 def rotate(u, v, w, yaw, pitch, roll):
+    '''
+    Calculate the value of u, v, and w after a specified axis rotation
+    :param u: U component of the wind
+    :param v: V component of the wind
+    :param w: W component of the wind
+    :param yaw: Rotation about the Z axis
+    :param pitch: Rotation about the X axis
+    :param roll: Rotation about the Y axis
+    :return:
+        result: 3D array of the new U, V, and W fields after the rotation
+    '''
 
     rot_matrix = np.asarray(
         [[cos(yaw)*cos(pitch), cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll), cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll)],
@@ -211,6 +241,25 @@ def send_mail(send_from, send_to, subject, text, files=None,
               tls=True, html=False, images=None,
               username=None, password=None,
               config_file=None, config=None):
+    '''
+    Send an email to the specified email addresses
+    :param send_from: "from" email address
+    :param send_to: List of addresses to send the email to
+    :param subject: Subject of the email
+    :param text: Text of the email
+    :param files: Path to files to attach to the email
+    :param data_attachments:
+    :param server: Server to send the email from
+    :param port: Port on the server to send the email from
+    :param tls:
+    :param html:
+    :param images:
+    :param username:
+    :param password:
+    :param config_file:
+    :param config:
+    :return:
+    '''
 
     if files is None:
         files = []
