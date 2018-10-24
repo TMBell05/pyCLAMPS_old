@@ -30,7 +30,7 @@ def concat_files(files, concat_dim='time'):
 def get_aeri_variables(fn, variables):
     """
     Extract specific variables and mask areas of questionable quality. time and height will
-    be extracted automatically
+    be extracted automatically. This will also mask out large gaps in data
     :param fn: Filename
     :param variables: List of variables to extract
     :return: Dict of data
@@ -78,6 +78,13 @@ def get_aeri_variables(fn, variables):
         # mask the gaps
         tmp.mask = np.isnan(tmp)
         data[var] = tmp
+
+    # Add in the qc variable
+    bad = np.zeros(shape=(gaps_counter, data['height'].size))
+    bad[:] = 1
+    qc_flag = np.ma.MaskedArray(np.append(qc_flag, bad, axis=0))
+    qc_flag = qc_flag[sort_order]
+    data['qc_flag'] = qc_flag
 
     nc.close()
 
