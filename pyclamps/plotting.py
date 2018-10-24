@@ -28,7 +28,9 @@ z_0 = 0
 cmaps = {
     'w':  {'cm': 'seismic',   'label': 'vertical velocity [m/s]'},
     'ws': {'cm': 'gist_stern_r',              'label': 'windspeed [m/s]'},
+    # 'ws': {'cm': 'CMRmap_r',              'label': 'windspeed [m/s]'},
     'wd': {'cm': cm_wd,   'label': 'wind direction [deg]'},
+    # 'wd': {'cm': cmocean.cm.phase,   'label': 'wind direction [deg]'},
     'pt': {'cm': cmocean.cm.thermal, 'label': 'potential temperature [C]'},
     'q':  {'cm': cmocean.cm.haline_r,  'label': 'q [g/kg]'},
     'dp': {'cm': cmocean.cm.haline_r,  'label': 'dewpoint [C]'},
@@ -66,7 +68,7 @@ def rhi_plot(elev, rng_m, vel, az, time, vmin=-5, vmax=5,
     x_m = rng_m * np.cos(elev)
     y_m = rng_m * np.sin(elev)
 
-    if az >= 180.: x_m *= -1.
+    # if az >= 180.: x_m *= -1.
 
     #     vel = vel[sort, :].transpose()
     vel = vel.transpose()
@@ -156,7 +158,11 @@ def time_height(time, height, data, field, ax=None, datemin=None, datemax=None,
 
     # Format the limits
     ax.xaxis.set_major_locator(mdates.HourLocator())
+    ax.xaxis.set_minor_locator(mdates.HourLocator())
+    # ax.xaxis.set_major_formatter(mdates.DateFormatter('%m/%d'))
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%H%M'))
+    plt.setp(ax.xaxis.get_majorticklabels(), rotation=45)
+
     if zmin is not None and zmax is not None:
         ax.set_ylim(zmin, zmax)
     if datemin is not None and datemax is not None:
@@ -164,7 +170,7 @@ def time_height(time, height, data, field, ax=None, datemin=None, datemax=None,
 
     # Set the labels
     ax.set_ylabel('Height [m]')
-    ax.set_xlabel('Time [UTC]')
+    # ax.set_xlabel('Time [UTC]')
 
     return ax
 

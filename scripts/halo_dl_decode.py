@@ -27,7 +27,8 @@ lookup = {'User file 4 - stepped': 'fp',
           'User file 2 - stepped': 'fp',
           'User file 1 - stepped': 'ppi',
           'VAD - stepped': 'ppi',
-          'Stare - stepped': 'fp'}
+          'Stare - stepped': 'fp',
+          'Stare': 'fp'}
 
 FILL_VALUE = -9999
 

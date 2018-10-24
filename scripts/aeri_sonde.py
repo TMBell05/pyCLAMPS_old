@@ -44,18 +44,20 @@ for i in range(aeri_data.dimensions['time'].size):
     # Extract the pressure and temperature data
     T = aeri_data['temperature'][i] * units.C
     p = aeri_data['pressure'][i] * units.mbar
+    z = aeri_data['height'][:] * 1.e3 + 296 - 484
 
     # Calculate the dewpoint
     e = vapor_pressure(p, aeri_data['waterVapor'][i]*1e-3)
     Td = dewpoint(e)
 
     # make the plot
-    fig = plt.figure(figsize=(9, 9))
-    skew = SkewT(fig, rotation=0)
+    fig, ax = plt.subplots(1, figsize=(9, 9))
+    # skew = SkewT(fig, rotation=0)
+    # plt = skew
 
     # Plot temperature and dewpoint
-    skew.plot(p, T, 'r')
-    skew.plot(p, Td, 'g')
+    ax.plot(T, z, 'r')
+    ax.plot(Td, z, 'g')
 
     if args.vads is not None:
         # Find the closest vad to the aeri time and get the data
@@ -69,22 +71,21 @@ for i in range(aeri_data.dimensions['time'].size):
         ind = np.where(h < max_h)
         u = u[ind]
         v = v[ind]
-        h = h[ind]
+        h = h[ind] + 296 - 484
 
         # Convert the heights to pressure by interpolating from the aeri derived pressures
-        h2p = interp1d(aeri_data['height'][:]*1e3, aeri_data['pressure'][i])
-        vad_p = h2p(h)
+        # h2p = interp1d(aeri_data['height'][:]*1e3, aeri_data['pressure'][i])
+        # vad_p = h2p(h)
 
         # Plot the barbs
-        skew.plot_barbs(vad_p, u, v)
+        ax.barbs(np.full_like(h, 45), h, u, v)
 
     # Add the relevant special lines
-    skew.ax.set_ylim(1000, 700)
-    skew.ax.set_xlim(0, 50)
-    skew.plot_dry_adiabats()
-    skew.plot_moist_adiabats()
+    ax.set_ylim(-200, 1500)
+    ax.set_xlim(0, 50)
+    ax.grid()
     # skew.plot_mixing_lines()
-    skew.ax.set_title("OU AERI " + date.isoformat())
+    ax.set_title("OU AERI " + date.isoformat())
 
-    plt.savefig(os.path.join(args.out_dir, date.strftime('aeri_sonde_%Y%m%d_%H%M%S.png')))
+    plt.savefig(os.path.join(args.out_dir, date.strftime('aeri_sonde_bl_%Y%m%d_%H%M%S.png')))
     plt.close()

@@ -22,19 +22,35 @@ for f in args.in_files:
     scans = []
     counter = 0
 
+    '''use this section if there are multiple azimuths'''
+    # Figure out how many scans there are
+    # last = None
+    # for az in nc['azimuth'][:]:
+    #     if last is None:
+    #         last = az
+    #     elif az != last:
+    #         last = az
+    #         scans.append(counter)
+    #         counter += 1
+    #     else:
+    #         scans.append(counter)
+
+    '''use this section if there is only one azimuth. Assumes elevations are increasing'''
     # Figure out how many scans there are
     last = None
-    for az in nc['azimuth'][:]:
+    for elev in nc['elevation'][:]:
+        print last
         if last is None:
-            last = az
-        elif az != last:
-            last = az
+            pass
+        elif elev < last:
             scans.append(counter)
             counter += 1
         else:
             scans.append(counter)
+        last = elev
 
     scans = np.asarray(scans)
+    print scans
 
     for scan in range(0, counter):
         ind = np.where(scans == scan)
@@ -45,7 +61,7 @@ for f in args.in_files:
         # Get the grid figured out
         elev = np.deg2rad(nc['elevation'][ind])
         rng_m = nc['height'][:] * 1e3
-        az = np.round(np.mean(nc['azimuth'][ind]))
+        az = np.round(np.mean(np.where(nc['azimuth'][ind] == 360., 0, nc['azimuth'][ind])))
 
         # Get the data
         vel = nc['velocity'][ind]
@@ -65,7 +81,7 @@ for f in args.in_files:
 
         if not isfile(image_name):
             print(image_name)
-            rhi_plot(elev, rng_m, h_vel, az, time, vmax=10, vmin=-10, xlim=(-2800, 2800), ylim=(0, 2500),
+            rhi_plot(elev, rng_m, h_vel, az, time, vmax=25, vmin=-25, xlim=(-2800, 2800), ylim=(0, 2500),
                      terrain_file=args.terrain)
             plt.savefig(image_name)
             plt.close()

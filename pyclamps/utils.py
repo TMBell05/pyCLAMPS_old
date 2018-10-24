@@ -1,6 +1,7 @@
 """
 Collection of utility functions for processing CLAMPS data
 """
+import matplotlib.pyplot as plt
 import numpy as np
 import pyproj
 import xarray
@@ -11,6 +12,9 @@ from datetime import datetime
 from netCDF4 import Dataset
 from numpy import sin, cos
 from pint import UnitRegistry
+from scipy.optimize import leastsq
+from scipy.signal import correlate
+
 
 from email.mime.multipart import MIMEMultipart
 from email.mime.base import MIMEBase
@@ -130,6 +134,8 @@ def get_tower_from_ucar_nc(nc_file, t_id):
                 # TODO - Account for radiation and flux data
                 if len(info) == 3:
                     tower.add_measurement(info[0], ureg(info[1]).to_base_units().magnitude, nc[key][:])
+                elif len(info) == 5:
+                    tower.add_measurement('{}_{}'.format(info[0], info[1]), ureg(info[3]).to_base_units().magnitude, nc[key][:])
 
             except AttributeError:
                 pass

@@ -42,7 +42,7 @@ var_lookup = {'leo':
                   {
                       'vel': 'velocity',
                       'thresh_var': 'intensity',
-                      'thresh_value': 1.01,
+                      'thresh_value': 1.003,
                       'az': 'azimuth',
                       'elev': 'elevation',
                       'range': 'range',
@@ -136,6 +136,46 @@ def process_file(in_file, system, height=None, sinfit_dir=None):
             rmse.append(tmp_RMSE)
             r_sq.append(tmp_r_sq)
 
+        if os.path.isfile(nc_name):
+            continue
+        if height is not None:
+            i = (np.abs(np.asarray(hgt) - height)).argmin()
+            print i
+            u = u[i]
+            v = v[i]
+            w = w[i]
+            hgt = hgt[i]
+            rmse = rmse[i]
+
+            if sinfit_dir is not None:
+                filename = "sinfit_{height}m_{date}.png".format(height=height, date=date.strftime("%Y%m%d_%H%M%S"))
+                filename = os.path.join(sinfit_dir, filename)
+                print nc
+                cnr = nc[var_lookup[system]['thresh_var']][scan_ind, i].transpose()
+                vel = nc[var_lookup[system]['vel']][scan_ind, i].transpose()
+                az = nc[var_lookup[system]['az']][scan_ind].transpose()
+                elev = np.round(np.mean(nc[var_lookup[system]['elev']][scan_ind]), 2)
+
+                vel = np.where(cnr <= var_lookup[system]['thresh_value'], np.nan, vel)
+
+                az_rad = np.deg2rad(az)
+                elev_rad = np.deg2rad(elev)
+
+                print az.shape
+                print vel.shape
+
+                plt.figure()
+                plt.scatter(az, vel)
+                plt.plot(az, (
+                u * sin(az_rad) * cos(elev_rad) + v * cos(az_rad) * cos(elev_rad) + w * sin(elev_rad)).tolist())
+                plt.ylim((-20, 20))
+                plt.xlim((0, 360))
+                plt.title("{date} Elev={elev} Height={height}".format(date=date.strftime("%Y%m%d_%H%M%S"),
+                                                                      elev=elev,
+                                                                      height=hgt))
+                plt.savefig(filename)
+                plt.close()
+
         write_to_nc(nc_name, date, elev, u, v, w, hgt, rmse, r_sq)
 
     # Close the netcdf
@@ -201,7 +241,7 @@ if __name__=='__main__':
         # nc_name = "{prefix}_{date}_{elev}.nc"
         # nc_name = nc_name.format(prefix=args.out_prefix, date=date.strftime("%Y%m%d_%H%M%S"), elev=int(np.mean(elev)))
         # nc_name = os.path.join(args.out_dir, nc_name)
-        #
+
         # write_to_nc(nc_name, date, elev, u, v, w, hgt, rmse, r_sq)
 
 
